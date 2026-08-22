@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.EmuTune" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#08090C</item>
+        <item name="android:statusBarColor">#08090C</item>
+        <item name="android:navigationBarColor">#08090C</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
