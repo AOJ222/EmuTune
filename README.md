@@ -14,6 +14,11 @@ This is not a compatibility wiki, an AI chat app, an emulator launcher, or a
 database of community settings. The app makes a decision; the evidence remains
 inspectable underneath.
 
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?logo=kotlin)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-2026.08.00-4285F4?logo=jetpackcompose)](https://developer.android.com/develop/ui/compose)
+[![Android](https://img.shields.io/badge/Android-29..36-3DDC84?logo=android)](https://developer.android.com)
+[![AGP](https://img.shields.io/badge/AGP-9.2.1-3DDC84)](https://developer.android.com/build/releases/gradle-plugin)
+
 ## Status — Milestone 1
 
 A working, tested vertical slice:
