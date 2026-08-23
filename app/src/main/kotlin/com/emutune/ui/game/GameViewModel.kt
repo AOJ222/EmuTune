@@ -152,19 +152,27 @@ class GameViewModel @Inject constructor(
      * Measures the current game's frame rate from screen capture, then persists the
      * result as an Observation and recomputes the recommendation. [requestConsent] is
      * the Activity-level callback that launches the MediaProjection consent dialog.
+     *
+     * The measurement is attributed to the route the user is actually playing (the
+     * session's current route). Without a session there is no trustworthy "what is on
+     * screen", so the recommended route is used only as a fallback and never presented
+     * as a confirmed current route.
      */
     fun startFpsMeasurement(requestConsent: () -> Unit) {
         if (_state.value.fpsState == FpsMeasureUiState.Measuring) return
-        val route = _state.value.routes.firstOrNull { it.isRecommended }?.route
-        val editionId = route?.gameEditionId ?: _state.value.editions.firstOrNull()?.id
-        val edition = _state.value.editions.firstOrNull { it.id == editionId }
 
         _state.value = _state.value.copy(fpsState = FpsMeasureUiState.Measuring)
         FpsCaptureResult.flow.value = null
         requestConsent()
 
         viewModelScope.launch {
-            val result = withTimeoutOrNull(20_000) {
+            val sessionRouteId = sessionRepository.observeCurrent().first()?.routeId
+            val route = sessionRouteId
+                ?.let { id -> _state.value.routes.firstOrNull { it.route.id == id }?.route }
+                ?: _state.value.routes.firstOrNull { it.isRecommended }?.route
+            val editionId = route?.gameEditionId ?: _state.value.editions.firstOrNull()?.id
+
+            val result = withTimeoutOrNull(30_000) {
                 FpsCaptureResult.flow.filterNotNull().first()
             }
             when (result) {
