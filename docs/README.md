@@ -4,6 +4,8 @@ EmuTune is a premium, evidence-driven emulator optimisation platform. Its purpos
 
 This index is the single entry point to the documentation.
 
+- [Status](STATUS.md) — the canonical living project-status document (current state, what works/partial/unsupported, latest test results, real-device validation status, next priorities).
+
 ## 00 — Overview
 
 - [Product](00-overview/product.md) — what the product is (and is not)
