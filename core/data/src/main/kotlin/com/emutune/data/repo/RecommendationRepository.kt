@@ -33,6 +33,11 @@ class RecommendationRepository @Inject constructor(
         val routes = gameDao.allRoutes().first().map { it.toDomain() }
         val observations = observationDao.observeAll().first().map { it.toDomain() }
 
+        // Milestone 1 is offline and single-device, so only the current profile is
+        // known. Observations carry a deviceFingerprintId, but the fingerprints those
+        // ids refer to are not persisted, so every observation that was not recorded on
+        // this device currently resolves to UNKNOWN_HARDWARE. Real cross-device hardware
+        // matching arrives with the evidence network (Milestone 2+).
         val observationDevices = profile?.let { mapOf(it.id to it) } ?: emptyMap()
 
         return engine.recommend(

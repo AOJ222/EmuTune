@@ -54,6 +54,7 @@ class DeviceProfiler @Inject constructor(
     private fun readSocModel(): SoCModel? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
         val model = Build.SOC_MODEL.orUnknownToNull() ?: return null
+        if (model.isGenericSocName()) return null
         val manufacturer = Build.SOC_MANUFACTURER.orUnknownToNull()
         return SoCModel(
             name = model,
@@ -67,6 +68,10 @@ class DeviceProfiler @Inject constructor(
         val trimmed = trim()
         return if (trimmed.isEmpty() || trimmed.equals("unknown", ignoreCase = true)) null else trimmed
     }
+
+    /** Emulator/VM kernel codenames and ABIs that are not a real SoC identity. */
+    private fun String.isGenericSocName(): Boolean =
+        lowercase() in setOf("ranchu", "goldfish", "qemu", "arm64", "arm", "aarch64", "generic")
 
     private fun totalMemoryBytes(): Long? {
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
