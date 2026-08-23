@@ -104,5 +104,13 @@ class SessionRepositoryTest {
         override suspend fun upsertGames(entities: List<com.emutune.data.db.GameEntity>) = Unit
         override suspend fun upsertEditions(entities: List<com.emutune.data.db.GameEditionEntity>) = Unit
         override suspend fun upsertRoutes(entities: List<com.emutune.data.db.ExecutionRouteEntity>) = Unit
+        override suspend fun findBySortKey(sortKey: String) = null
+        override suspend fun gameByIdOnce(id: Long) = null
+        override suspend fun insertGame(entity: com.emutune.data.db.GameEntity) = 0L
+        override suspend fun insertEdition(entity: com.emutune.data.db.GameEditionEntity) = 0L
+        override suspend fun insertRoute(entity: com.emutune.data.db.ExecutionRouteEntity) = 0L
+        override suspend fun deleteGame(id: Long) = Unit
+        override suspend fun deleteEditionsFor(gameId: Long) = Unit
+        override suspend fun deleteRoutesFor(gameId: Long) = Unit
     }
 }
