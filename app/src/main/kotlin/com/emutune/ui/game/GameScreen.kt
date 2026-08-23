@@ -17,6 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +39,7 @@ import com.emutune.ui.presentation.StatusPresentation
 fun GameScreen(
     gameId: Long,
     onBack: () -> Unit,
+    onMeasureFps: () -> Unit = {},
     viewModel: GameViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -94,6 +96,7 @@ fun GameScreen(
                         state = state,
                         onPlay = viewModel::play,
                         onMarkManual = viewModel::markPlayingManually,
+                        onMeasureFps = { viewModel.startFpsMeasurement(onMeasureFps) },
                     )
                     RoutesCard(state)
                 }
@@ -107,6 +110,7 @@ private fun BestVerifiedCard(
     state: GameUiState,
     onPlay: () -> Unit,
     onMarkManual: () -> Unit,
+    onMeasureFps: () -> Unit,
 ) {
     val recommendation = state.recommendation ?: return
     val recommendedRow = state.routes.firstOrNull { it.isRecommended } ?: return
@@ -165,6 +169,8 @@ private fun BestVerifiedCard(
         Spacer(modifier = Modifier.height(Spacing.L))
 
         PlayActions(state, onPlay = onPlay, onMarkManual = onMarkManual)
+        Spacer(modifier = Modifier.height(Spacing.M))
+        FpsMeasureSection(state = state, onMeasureFps = onMeasureFps)
         Spacer(modifier = Modifier.height(Spacing.S))
         Text(
             text = "Automatic optimisation is gated on the emulator's CONFIG_WRITE capability. Dolphin currently exposes guided configuration only.",
@@ -220,6 +226,49 @@ private fun PlayActions(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FpsMeasureSection(state: GameUiState, onMeasureFps: () -> Unit) {
+    val fpsState = state.fpsState
+    when (fpsState) {
+        FpsMeasureUiState.Idle -> {
+            OutlinedButton(onClick = onMeasureFps, modifier = Modifier.fillMaxWidth()) {
+                Text("MEASURE FPS")
+            }
+        }
+
+        FpsMeasureUiState.Measuring -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(
+                    modifier = Modifier.height(16.dp).fillMaxWidth(0.08f),
+                    color = EmuTuneColors.Accent,
+                )
+                Spacer(modifier = Modifier.padding(horizontal = Spacing.S))
+                Text(
+                    text = "Measuring from screen capture…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = EmuTuneColors.TextSecondary,
+                )
+            }
+        }
+
+        is FpsMeasureUiState.Success -> {
+            Metric(
+                label = "MEASURED FPS (screen)",
+                value = String.format("%.1f", fpsState.averageFps),
+                valueColor = EmuTuneColors.Accent,
+            )
+        }
+
+        is FpsMeasureUiState.Failure -> {
+            Text(
+                text = "Measurement failed: ${fpsState.reason}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = EmuTuneColors.Danger,
+            )
         }
     }
 }

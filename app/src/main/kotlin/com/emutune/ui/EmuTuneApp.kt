@@ -17,7 +17,7 @@ import com.emutune.ui.navigation.MainDestination
  * as a detail screen.
  */
 @Composable
-fun EmuTuneApp() {
+fun EmuTuneApp(onMeasureFps: () -> Unit = {}) {
     EmuTuneTheme {
         val backStack = rememberNavBackStack(MainDestination)
         NavDisplay(
@@ -35,6 +35,7 @@ fun EmuTuneApp() {
                     GameScreen(
                         gameId = key.gameId,
                         onBack = { if (backStack.size > 1) backStack.removeAt(backStack.size - 1) },
+                        onMeasureFps = onMeasureFps,
                     )
                 }
             },
