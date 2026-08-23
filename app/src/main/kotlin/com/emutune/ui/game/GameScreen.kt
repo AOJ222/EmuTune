@@ -90,7 +90,11 @@ fun GameScreen(
                         .padding(Spacing.L),
                     verticalArrangement = Arrangement.spacedBy(Spacing.L),
                 ) {
-                    BestVerifiedCard(state)
+                    BestVerifiedCard(
+                        state = state,
+                        onPlay = viewModel::play,
+                        onMarkManual = viewModel::markPlayingManually,
+                    )
                     RoutesCard(state)
                 }
             }
@@ -99,7 +103,11 @@ fun GameScreen(
 }
 
 @Composable
-private fun BestVerifiedCard(state: GameUiState) {
+private fun BestVerifiedCard(
+    state: GameUiState,
+    onPlay: () -> Unit,
+    onMarkManual: () -> Unit,
+) {
     val recommendation = state.recommendation ?: return
     val recommendedRow = state.routes.firstOrNull { it.isRecommended } ?: return
     val evaluation = recommendation.evaluations.firstOrNull {
@@ -156,19 +164,63 @@ private fun BestVerifiedCard(state: GameUiState) {
         }
         Spacer(modifier = Modifier.height(Spacing.L))
 
-        Button(
-            onClick = { },
-            enabled = false,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("OPTIMISE")
-        }
+        PlayActions(state, onPlay = onPlay, onMarkManual = onMarkManual)
         Spacer(modifier = Modifier.height(Spacing.S))
         Text(
             text = "Automatic optimisation is gated on the emulator's CONFIG_WRITE capability. Dolphin currently exposes guided configuration only.",
             style = MaterialTheme.typography.labelMedium,
             color = EmuTuneColors.TextTertiary,
         )
+    }
+}
+
+@Composable
+private fun PlayActions(
+    state: GameUiState,
+    onPlay: () -> Unit,
+    onMarkManual: () -> Unit,
+) {
+    val playState = state.playState
+    when (playState) {
+        PlayUiState.Idle -> {
+            Button(onClick = onPlay, modifier = Modifier.fillMaxWidth()) {
+                Text("PLAY")
+            }
+        }
+
+        PlayUiState.Launching -> {
+            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
+                Text("LAUNCHING…")
+            }
+        }
+
+        PlayUiState.Launched -> {
+            StatusBadge(label = "Launched", color = EmuTuneColors.Success)
+        }
+
+        PlayUiState.MarkedManual -> {
+            StatusBadge(label = "Playing now", color = EmuTuneColors.Accent)
+        }
+
+        is PlayUiState.OfferManual -> {
+            OpticSurface(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.M)) {
+                    Text(
+                        text = "Automatic launch is not available.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = EmuTuneColors.TextPrimary,
+                    )
+                    Text(
+                        text = playState.reason,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = EmuTuneColors.TextSecondary,
+                    )
+                    Button(onClick = onMarkManual, modifier = Modifier.fillMaxWidth()) {
+                        Text("MARK AS PLAYING")
+                    }
+                }
+            }
+        }
     }
 }
 
