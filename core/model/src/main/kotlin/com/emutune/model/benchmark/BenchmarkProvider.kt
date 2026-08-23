@@ -26,7 +26,11 @@ data class BenchmarkCapability(
 
 /** Outcome of a measurement run. */
 sealed interface BenchmarkResult {
-    data class Success(val metrics: BenchmarkMetrics, val grade: EvidenceGrade) : BenchmarkResult
+    data class Success(
+        val metrics: BenchmarkMetrics,
+        val grade: EvidenceGrade,
+        val durationSeconds: Int? = null,
+    ) : BenchmarkResult
     data class Failure(val reason: String) : BenchmarkResult
 }
 
