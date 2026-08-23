@@ -12,14 +12,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.emutune.benchmark.FpsCaptureResult
 import com.emutune.benchmark.FpsCaptureService
+import com.emutune.data.emulator.SafGrantStore
 import com.emutune.model.benchmark.BenchmarkResult
 import com.emutune.ui.EmuTuneApp
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var safGrantStore: SafGrantStore
 
     private val captureConsent = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -38,7 +45,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Debug-only Dolphin SAF spike: launch ACTION_OPEN_DOCUMENT_TREE and log the grant.
+    // SAF grant for Dolphin config access: persist the granted tree URI so the reader
+    // can find it after restart. Only the URI is stored — never the config contents.
     private val dolphinAccess = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree(),
     ) { uri ->
@@ -51,8 +59,9 @@ class MainActivity : ComponentActivity() {
             Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         runCatching {
             contentResolver.takePersistableUriPermission(uri, takeFlags)
+            lifecycleScope.launch { safGrantStore.setDolphinUri(uri.toString()) }
             Log.i(TAG, "SAF spike: granted + persisted $uri")
-            Toast.makeText(this, "SAF spike: granted $uri", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "SAF spike: granted", Toast.LENGTH_SHORT).show()
         }.onFailure {
             Log.w(TAG, "SAF spike: takePersistableUriPermission failed", it)
             Toast.makeText(this, "SAF spike: grant failed: ${it.message}", Toast.LENGTH_LONG).show()
