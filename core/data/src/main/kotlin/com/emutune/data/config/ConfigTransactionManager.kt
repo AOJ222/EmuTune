@@ -59,21 +59,22 @@ class ConfigTransactionManager @Inject constructor(
             return ConfigTransactionResult.Rejected("Adapter does not support CONFIG_WRITE")
         }
 
-        val transaction = newTransaction(adapter, candidate)
+        var transaction = newTransaction(adapter, candidate)
         transactionStore.save(transaction)
 
-        // Read current, snapshot it.
+        // Read current, snapshot it. The snapshot is persisted on the transaction so
+        // that an interrupted mutation can be rolled back to the exact pre-mutation
+        // state after a process death.
         onStep(ConfigTransactionStep.ReadingCurrent)
         val snapshot = when (val read = adapter.readConfiguration(game)) {
-            is ConfigReadResult.Success -> read.snapshot.also {
-                onStep(ConfigTransactionStep.SnapshotCreated(it.hash))
-            }
-            is ConfigReadResult.Empty -> emptySnapshot(adapter, candidate).also {
-                onStep(ConfigTransactionStep.SnapshotCreated(it.hash))
-            }
+            is ConfigReadResult.Success -> read.snapshot
+            is ConfigReadResult.Empty -> emptySnapshot(adapter, candidate)
             is ConfigReadResult.NotSupported -> return reject(transaction, "Current configuration cannot be read", onStep)
             is ConfigReadResult.Failure -> return reject(transaction, "Failed to read current configuration: ${read.reason}", onStep)
         }
+        onStep(ConfigTransactionStep.SnapshotCreated(snapshot.hash))
+        transaction = transaction.copy(snapshot = snapshot)
+        transactionStore.save(transaction)
 
         // Validate the candidate against the emulator's schema.
         onStep(ConfigTransactionStep.ValidatingCandidate)
