@@ -6,6 +6,7 @@ import com.emutune.data.config.ConfigTransactionStore
 import com.emutune.data.config.InMemoryConfigTransactionStore
 import com.emutune.data.db.DeviceDao
 import com.emutune.data.db.EmuTuneDatabase
+import com.emutune.data.db.ActivityDao
 import com.emutune.data.db.GameDao
 import com.emutune.data.db.ObservationDao
 import com.emutune.data.db.SessionDao
@@ -26,7 +27,13 @@ object DataModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): EmuTuneDatabase =
-        Room.databaseBuilder(context, EmuTuneDatabase::class.java, "emutune.db").build()
+        Room.databaseBuilder(context, EmuTuneDatabase::class.java, "emutune.db")
+            // Pre-release: v2 changed primary keys to autoGenerate and added
+            // activity_events/providerId, so a clean recreate is acceptable (no shipped
+            // users yet; the debug seeder repopulates). Replace with a real Migration
+            // before any release with real user data.
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     @Provides
     fun provideGameDao(db: EmuTuneDatabase): GameDao = db.gameDao()
@@ -39,6 +46,9 @@ object DataModule {
 
     @Provides
     fun provideSessionDao(db: EmuTuneDatabase): SessionDao = db.sessionDao()
+
+    @Provides
+    fun provideActivityDao(db: EmuTuneDatabase): ActivityDao = db.activityDao()
 
     @Provides
     @Singleton

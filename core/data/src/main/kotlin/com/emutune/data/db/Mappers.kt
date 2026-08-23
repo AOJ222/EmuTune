@@ -19,6 +19,8 @@ import com.emutune.model.ids.GpuDriverId
 import com.emutune.model.ids.ObservationId
 import com.emutune.model.ids.PlatformId
 import com.emutune.model.ids.TranslationLayerId
+import com.emutune.model.activity.ActivityEvent
+import com.emutune.model.activity.ActivityEventType
 import com.emutune.model.route.EmulatorInstallation
 import com.emutune.model.route.ExecutionRoute
 import com.emutune.model.session.PlaySession
@@ -98,6 +100,7 @@ object Mappers {
         success = success,
         crashCount = crashCount,
         recordedAt = Instant.ofEpochMilli(recordedAt),
+        providerId = providerId,
     )
 
     fun Observation.toEntity() = ObservationEntity(
@@ -112,6 +115,7 @@ object Mappers {
         success = success,
         crashCount = crashCount,
         recordedAt = recordedAt.toEpochMilli(),
+        providerId = providerId,
     )
 
     fun DeviceProfileEntity.toDomain() = JsonCodec.json.decodeFromString<DeviceFingerprint>(fingerprintJson)
@@ -150,5 +154,23 @@ object Mappers {
         routeId = routeId?.value,
         source = source.name,
         startedAt = startedAt.toEpochMilli(),
+    )
+
+    fun ActivityEventEntity.toDomain() = ActivityEvent(
+        id = com.emutune.model.ids.ActivityEventId(id),
+        type = ActivityEventType.valueOf(type),
+        title = title,
+        detail = detail,
+        gameId = gameId,
+        occurredAt = Instant.ofEpochMilli(occurredAt),
+    )
+
+    fun ActivityEvent.toEntity() = ActivityEventEntity(
+        id = id.value,
+        type = type.name,
+        title = title,
+        detail = detail,
+        gameId = gameId,
+        occurredAt = occurredAt.toEpochMilli(),
     )
 }
