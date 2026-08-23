@@ -34,28 +34,32 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import com.emutune.designsystem.theme.EmuTuneColors
 import com.emutune.designsystem.theme.Radius
 import com.emutune.designsystem.theme.Spacing
+import com.emutune.ui.activity.ActivityScreen
 import com.emutune.ui.device.DeviceScreen
 import com.emutune.ui.home.HomeScreen
 import com.emutune.ui.library.LibraryScreen
 import com.emutune.ui.settings.SettingsScreen
 
-/** The four primary areas reachable from the top-level tab bar. */
+/** The five primary areas reachable from the top-level tab bar. */
 enum class TopDestination(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Outlined.Home),
     LIBRARY("Library", Icons.AutoMirrored.Outlined.MenuBook),
     DEVICE("Device", Icons.Outlined.Smartphone),
+    ACTIVITY("Activity", Icons.Outlined.History),
     SETTINGS("Settings", Icons.Outlined.Settings),
 }
 
 @Composable
 fun MainScreen(
     onOpenGame: (Long) -> Unit,
+    onAddGame: () -> Unit,
     viewModel: MainViewModel = hiltViewModel(),
 ) {
     var selected by remember { mutableStateOf(TopDestination.HOME) }
@@ -67,8 +71,9 @@ fun MainScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (selected) {
                 TopDestination.HOME -> HomeScreen()
-                TopDestination.LIBRARY -> LibraryScreen(onOpenGame = onOpenGame)
+                TopDestination.LIBRARY -> LibraryScreen(onOpenGame = onOpenGame, onAddGame = onAddGame)
                 TopDestination.DEVICE -> DeviceScreen()
+                TopDestination.ACTIVITY -> ActivityScreen(onBack = null)
                 TopDestination.SETTINGS -> SettingsScreen()
             }
         }

@@ -153,7 +153,11 @@ class FpsCaptureService : Service() {
             val snapshot = snapshotSamples()
             val measured = FrameDeltaAnalyzer.analyze(snapshot)
             FpsCaptureResult.flow.value = if (measured.hasAnyMeasurement) {
-                BenchmarkResult.Success(measured, EvidenceGrade.C_PARTIAL_MEASUREMENT)
+                BenchmarkResult.Success(
+                    metrics = measured,
+                    grade = EvidenceGrade.C_PARTIAL_MEASUREMENT,
+                    durationSeconds = (durationMs / 1000).toInt().coerceAtLeast(1),
+                )
             } else {
                 BenchmarkResult.Failure("No frame changes detected during the capture window")
             }
