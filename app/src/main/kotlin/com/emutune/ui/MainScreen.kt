@@ -66,7 +66,7 @@ fun MainScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (selected) {
-                TopDestination.HOME -> HomeScreen(onOpenGame = onOpenGame)
+                TopDestination.HOME -> HomeScreen()
                 TopDestination.LIBRARY -> LibraryScreen(onOpenGame = onOpenGame)
                 TopDestination.DEVICE -> DeviceScreen()
                 TopDestination.SETTINGS -> SettingsScreen()

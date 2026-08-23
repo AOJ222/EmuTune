@@ -25,5 +25,5 @@ class HomeViewModel @Inject constructor(
     val installations: StateFlow<List<EmulatorInstallation>> = deviceRepository.observeInstallations()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun emulatorName(id: EmulatorId): String = registry.find(id)?.displayName ?: id.value
+    fun emulatorName(id: EmulatorId): String = registry.displayName(id)
 }

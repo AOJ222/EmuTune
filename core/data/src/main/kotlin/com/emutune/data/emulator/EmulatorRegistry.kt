@@ -49,4 +49,10 @@ class EmulatorRegistry @Inject constructor() {
     fun platforms(): List<Platform> = platforms
 
     fun platform(id: PlatformId): Platform? = platforms.firstOrNull { it.id == id }
+
+    /** Display name with a graceful fallback when the id is not yet curated. */
+    fun displayName(id: EmulatorId): String = find(id)?.displayName ?: id.value
+
+    /** Platform name with a graceful fallback when the id is not yet curated. */
+    fun platformName(id: PlatformId): String = platform(id)?.name ?: id.value
 }

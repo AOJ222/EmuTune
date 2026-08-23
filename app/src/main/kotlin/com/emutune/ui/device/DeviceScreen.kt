@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.emutune.designsystem.component.OpticSurface
+import com.emutune.designsystem.component.SectionTitle
 import com.emutune.designsystem.theme.EmuTuneColors
 import com.emutune.designsystem.theme.Spacing
 import com.emutune.model.device.DeviceFingerprint
@@ -88,15 +89,6 @@ fun DeviceScreen(viewModel: DeviceViewModel = hiltViewModel()) {
             }
         }
     }
-}
-
-@Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = EmuTuneColors.TextSecondary,
-    )
 }
 
 @Composable

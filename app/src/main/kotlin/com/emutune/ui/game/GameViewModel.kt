@@ -7,9 +7,7 @@ import com.emutune.data.repo.GameRepository
 import com.emutune.data.repo.RecommendationRepository
 import com.emutune.model.game.Game
 import com.emutune.model.game.GameEdition
-import com.emutune.model.ids.EmulatorId
 import com.emutune.model.ids.GameId
-import com.emutune.model.ids.PlatformId
 import com.emutune.model.recommendation.DisqualificationReason
 import com.emutune.model.recommendation.OptimizationGoal
 import com.emutune.model.recommendation.Recommendation
@@ -67,8 +65,8 @@ class GameViewModel @Inject constructor(
                     val evaluation = evaluationByRoute?.get(route.id)
                     RouteRowUi(
                         route = route,
-                        emulatorName = emulatorName(route.emulatorId),
-                        platformName = platformName(route.platformId),
+                        emulatorName = registry.displayName(route.emulatorId),
+                        platformName = registry.platformName(route.platformId),
                         averageFps = evaluation?.metrics?.averageFps,
                         isRecommended = route.id == recommendation?.recommendedRouteId,
                         disqualified = evaluation?.disqualified,
@@ -79,8 +77,4 @@ class GameViewModel @Inject constructor(
             )
         }
     }
-
-    fun emulatorName(id: EmulatorId): String = registry.find(id)?.displayName ?: id.value
-
-    fun platformName(id: PlatformId): String = registry.platform(id)?.name ?: id.value
 }
