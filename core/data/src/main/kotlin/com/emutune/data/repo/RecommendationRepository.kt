@@ -5,6 +5,7 @@ import com.emutune.data.db.GameDao
 import com.emutune.data.db.Mappers.toDomain
 import com.emutune.data.db.ObservationDao
 import com.emutune.model.device.DeviceFingerprint
+import com.emutune.model.ids.ExecutionRouteId
 import com.emutune.model.ids.GameEditionId
 import com.emutune.model.recommendation.OptimizationGoal
 import com.emutune.model.recommendation.Recommendation
@@ -27,7 +28,11 @@ class RecommendationRepository @Inject constructor(
     private val engine: RecommendationEngine,
 ) {
 
-    suspend fun recommendFor(editionId: GameEditionId, goal: OptimizationGoal): Recommendation {
+    suspend fun recommendFor(
+        editionId: GameEditionId,
+        goal: OptimizationGoal,
+        currentRouteId: ExecutionRouteId? = null,
+    ): Recommendation {
         val profile = deviceDao.observeProfile().first()?.toDomain()
         val targetDevice = profile ?: DeviceFingerprint()
         val routes = gameDao.allRoutes().first().map { it.toDomain() }
@@ -48,6 +53,7 @@ class RecommendationRepository @Inject constructor(
                 observations = observations,
                 targetDevice = targetDevice,
                 observationDevices = observationDevices,
+                currentRouteId = currentRouteId,
             ),
         )
     }

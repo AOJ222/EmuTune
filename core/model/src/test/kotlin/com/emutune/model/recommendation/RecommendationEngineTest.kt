@@ -25,6 +25,7 @@ class RecommendationEngineTest {
             mapOf(DeviceFingerprintId(1) to TestFixtures.targetDevice),
         comparableEditionIds: Set<GameEditionId> = emptySet(),
         latestBuilds: Map<EmulatorId, EmulatorBuildId> = emptyMap(),
+        currentRouteId: ExecutionRouteId? = null,
     ) = RecommendationRequest(
         gameEditionId = GameEditionId(editionId),
         goal = goal,
@@ -34,6 +35,7 @@ class RecommendationEngineTest {
         observationDevices = observationDevices,
         comparableEditionIds = comparableEditionIds,
         latestBuilds = latestBuilds,
+        currentRouteId = currentRouteId,
     )
 
     @Test
@@ -171,5 +173,49 @@ class RecommendationEngineTest {
 
         assertEquals(ExecutionRouteId(1), recommendation.recommendedRouteId)
         assertEquals(1, recommendation.evaluations.size)
+    }
+
+    @Test
+    fun `current route worse than best yields better route available with comparison`() {
+        val routeA = TestFixtures.route(1, 1)
+        val routeB = TestFixtures.route(2, 1)
+        val obsA = TestFixtures.observation(1, 1, 1, 1, BenchmarkMetrics(averageFps = 48.0, onePercentLowFps = 40.0))
+        val obsB = TestFixtures.observation(2, 1, 2, 1, BenchmarkMetrics(averageFps = 27.0, onePercentLowFps = 22.0))
+
+        val recommendation = engine.recommend(
+            request(
+                editionId = 1,
+                goal = OptimizationGoal.BALANCED,
+                routes = listOf(routeA, routeB),
+                observations = listOf(obsA, obsB),
+                currentRouteId = ExecutionRouteId(2),
+            ),
+        )
+
+        assertEquals(OptimizationStatus.BETTER_ROUTE_AVAILABLE, recommendation.status)
+        assertEquals(ExecutionRouteId(1), recommendation.recommendedRouteId)
+        val comparison = requireNotNull(recommendation.comparison)
+        assertEquals(ExecutionRouteId(2), comparison.currentRouteId)
+        assertTrue((comparison.percentChange ?: 0.0) > 0.0)
+    }
+
+    @Test
+    fun `current route equal to best yields optimal status`() {
+        val routeA = TestFixtures.route(1, 1)
+        val routeB = TestFixtures.route(2, 1)
+        val obsA = TestFixtures.observation(1, 1, 1, 1, BenchmarkMetrics(averageFps = 48.0))
+        val obsB = TestFixtures.observation(2, 1, 2, 1, BenchmarkMetrics(averageFps = 27.0))
+
+        val recommendation = engine.recommend(
+            request(
+                editionId = 1,
+                goal = OptimizationGoal.BALANCED,
+                routes = listOf(routeA, routeB),
+                observations = listOf(obsA, obsB),
+                currentRouteId = ExecutionRouteId(1),
+            ),
+        )
+
+        assertEquals(OptimizationStatus.OPTIMAL, recommendation.status)
     }
 }
