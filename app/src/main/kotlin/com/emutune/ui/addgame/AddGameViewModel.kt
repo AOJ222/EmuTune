@@ -81,7 +81,6 @@ class AddGameViewModel @Inject constructor(
         val title = _state.value.title.trim()
         val platformId = _state.value.selectedPlatformId
         val titleError = if (title.isEmpty()) "Enter a game title" else null
-        val duplicate = if (titleError == null) null else null
         if (titleError != null || platformId == null) {
             _state.update { it.copy(titleError = titleError) }
             return
@@ -96,9 +95,12 @@ class AddGameViewModel @Inject constructor(
 
             _state.update { it.copy(saving = true) }
 
-            val editionName = _state.value.editionName.trim().ifEmpty {
-                platformId.value
-            }
+            val platformName = _state.value.platforms
+                .firstOrNull { it.platform.id == platformId }
+                ?.platform
+                ?.name
+                ?: platformId.value
+            val editionName = _state.value.editionName.trim().ifEmpty { platformName }
             val edition = GameEdition(
                 id = GameEditionId(0),
                 gameId = GameId(0),
