@@ -65,6 +65,24 @@ data class RecommendationRequest(
  * A deterministic, staged recommendation engine. There is no machine-learning in the
  * ranking path. Stages run in order: hard compatibility, optimisation target,
  * stability, sustained behaviour, quality, confidence.
+ *
+ * ## Invariants
+ *
+ * The ranking is a deterministic function of the request: identical inputs produce
+ * identical recommendations. Each product rule below is an arithmetic invariant that
+ * `RecommendationEngineTest` asserts directly — if one breaks, a test fails.
+ *
+ * - A candidate with a higher average FPS but substantially worse 1% lows loses under
+ *   `BALANCED` (frame pacing dominates stability, and stability dominates BALANCED).
+ * - `MAX_PERFORMANCE` selects the highest-scoring valid candidate; performance weight
+ *   dominates so the highest sustainable FPS wins.
+ * - `STABLE_30`/`STABLE_60` disqualify a candidate whose sustained FPS (falling back
+ *   to average) cannot reach the target, even if it spikes higher transiently.
+ * - Exact-device evidence outranks weaker hardware matches; stale-build evidence is
+ *   discounted; crash-heavy routes are penalised and, past the threshold, disqualified.
+ * - A materially different edition is never ranked against the requested edition.
+ * - A provided `currentRouteId` produces `BETTER_ROUTE_AVAILABLE` (with a comparison)
+ *   when the best route beats it, and `OPTIMAL` when it is already best.
  */
 class RecommendationEngine(
     private val config: RecommendationConfig = RecommendationConfig(),
