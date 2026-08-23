@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import com.emutune.designsystem.theme.EmuTuneColors
+import com.emutune.designsystem.theme.Focus
 import com.emutune.designsystem.theme.Radius
 import com.emutune.designsystem.theme.Spacing
 import com.emutune.ui.activity.ActivityScreen
@@ -119,9 +120,9 @@ private fun TabItem(
             .clickable(onClick = onClick)
             .background(if (selected) EmuTuneColors.Accent.copy(alpha = 0.12f) else Color.Transparent)
             .border(
-                width = 1.dp,
+                width = Focus.RingWidth,
                 color = when {
-                    focused -> EmuTuneColors.Accent
+                    focused -> Focus.RingColor
                     selected -> EmuTuneColors.BorderStrong
                     else -> Color.Transparent
                 },
