@@ -45,14 +45,24 @@ The domain is Android-free so the engine and confidence model test as fast JVM t
 - `EmulatorRegistry` + `EmulatorDetector` (single source of package identifiers).
 - Room persistence (games, editions, routes, observations, device profile, installations) + repositories.
 - Design system (tokens, `EmuTuneTheme`, `OpticSurface`, `Metric`, `StatusBadge`, `ConfidenceIndicator`) + central `StatusPresentation` mapping.
-- Adaptive/controller-focus tab navigation; Home, Library, Game (recommendation), Device, Settings screens.
+- Adaptive/controller-focus tab navigation; Home, Library, Game, Device, Activity, Settings screens.
 - Debug-only `DebugDemoDataSeeder` (Spider-Man: Web of Shadows demo) isolated in the debug source set; the release graph cannot resolve it.
 - Debug-only optimisation simulation: Settings renders an `OptimizationDemoSection` that drives the real `ConfigTransactionManager` through a `FakeEmulatorAdapter`, showing each transaction step (read → snapshot → validate → apply → verify → commit/rollback) live. The release build substitutes a no-op section, and the fake adapter lives in the debug source set (verified: 0 `FakeEmulatorAdapter` references in the release APK).
 
+## v0.1 Alpha loop (added later)
+
+- **Real Add Game** — title → platform → edition → optional platform id → optional emulator route, with duplicate detection and auto-generated Room ids linking game/edition/route.
+- **Now Playing** — launch-through (Dolphin deep link) with manual "mark as playing" fallback.
+- **Measurement → Observation** — screen-capture frame-delta FPS via MediaProjection, persisted as a `C_PARTIAL_MEASUREMENT` observation; cancelled/failed measurements never persist.
+- **Observation → Evidence → Recommendation** — a new observation re-runs the deterministic engine and updates the game UI without refresh.
+- **Activity** — a curated feed (`GAME_ADDED` / `MEASUREMENT_COMPLETED` / `RECOMMENDATION_CHANGED`).
+
+See [STATUS.md](docs/STATUS.md) for what is partial and unsupported.
+
 ## Verified
 
-- 24 unit tests pass (recommendation engine, confidence model, config transactions including step-emission ordering).
-- `:app:assembleDebug` and `:app:assembleRelease` both build; `lintVitalRelease` passes.
+- 42 unit tests pass (recommendation engine, confidence model, config transactions incl. snapshot persistence + step ordering, frame-delta analyzer, session launch/fallback, game add/link, measurement recorder), plus 1 instrumented UI test.
+- `:app:assembleDebug` and `:app:assembleRelease` both build clean; `lintVitalRelease` passes.
 
 ## Intentionally not built in Milestone 1
 
