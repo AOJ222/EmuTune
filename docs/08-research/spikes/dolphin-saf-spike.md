@@ -84,6 +84,22 @@ error. Capture `adb logcat` for any `SecurityException`,
 
 ---
 
+## Result — CONFIRMED (real device, 2026-08-23, AYN Thor / Android 13)
+
+§1–§3 all PASS. The system picker surfaced "Dolphin Emulator"; navigating into its
+root showed `Config`; granting returned a **persisted** URI. Observed grants:
+
+```
+content://org.dolphinemu.dolphinemu.user/tree/root%2F
+content://org.dolphinemu.dolphinemu.user/tree/root%2FConfig
+```
+
+`takePersistableUriPermission` succeeded with read+write flags, so the grant
+survives app restarts. Read access to `Config/Dolphin.ini` is therefore available;
+write access is plausible (`grantUriPermissions=true` + write flag) but was not
+exercised end-to-end in this spike — treat write as CONFIRMED-for-grant, pending a
+one-line write test.
+
 ## Classification
 
 | §1–§4 outcome | Verdict | Next step |
