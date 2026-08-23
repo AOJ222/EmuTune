@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.emutune.data.emulator.EmulatorRegistry
 import com.emutune.data.repo.ActivityRepository
+import com.emutune.data.repo.DeviceRepository
 import com.emutune.data.repo.GameRepository
 import com.emutune.data.repo.newGame
 import com.emutune.model.activity.ActivityEventType
@@ -19,6 +20,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -39,12 +41,15 @@ data class AddGameUiState(
     val duplicateError: String? = null,
     val saving: Boolean = false,
     val savedGameId: GameId? = null,
+    /** Emulators actually installed on this device (distinct from those merely known). */
+    val installedEmulatorIds: Set<EmulatorId> = emptySet(),
 )
 
 @HiltViewModel
 class AddGameViewModel @Inject constructor(
     private val gameRepository: GameRepository,
     private val activityRepository: ActivityRepository,
+    deviceRepository: DeviceRepository,
     registry: EmulatorRegistry,
 ) : ViewModel() {
 
@@ -52,16 +57,20 @@ class AddGameViewModel @Inject constructor(
     val state: StateFlow<AddGameUiState> = _state
 
     init {
-        _state.update {
-            it.copy(
-                platforms = registry.platforms().map { platform ->
-                    PlatformOption(
-                        platform = platform,
-                        emulators = registry.all()
-                            .filter { emulator -> platform.id in emulator.supportedPlatformIds },
-                    )
-                },
+        val platforms = registry.platforms().map { platform ->
+            PlatformOption(
+                platform = platform,
+                emulators = registry.all()
+                    .filter { emulator -> platform.id in emulator.supportedPlatformIds },
             )
+        }
+        _state.update { it.copy(platforms = platforms) }
+
+        viewModelScope.launch {
+            val installed = deviceRepository.observeInstallations().first()
+                .map { it.emulatorId }
+                .toSet()
+            _state.update { it.copy(installedEmulatorIds = installed) }
         }
     }
 

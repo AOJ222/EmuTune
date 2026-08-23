@@ -176,6 +176,7 @@ private fun EmulatorSelector(
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.S)) {
         emulators.forEach { emulator ->
             val selected = emulator.id == state.selectedEmulatorId
+            val installed = emulator.id in state.installedEmulatorIds
             OpticSurface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,6 +186,11 @@ private fun EmulatorSelector(
                     text = emulator.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     color = if (selected) EmuTuneColors.Accent else EmuTuneColors.TextPrimary,
+                )
+                Text(
+                    text = if (installed) "Installed" else "Not installed",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (installed) EmuTuneColors.Success else EmuTuneColors.TextTertiary,
                 )
             }
         }
