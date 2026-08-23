@@ -15,6 +15,17 @@ quality and coherence matter more than the size of a diff.
 
 Full test suites run in CI; locally, run only the tests for the files you touched.
 
+## Preflight
+
+Run this before pushing. It is the same gate CI enforces.
+
+```bash
+./gradlew :core:model:test :core:data:testDebugUnitTest   # unit tests
+./gradlew :app:assembleDebug :app:assembleRelease          # both APKs
+```
+
+CI (`.github/workflows/ci.yml`) runs these on every push and pull request.
+
 ## Module layout
 
 | Module | Owns |
