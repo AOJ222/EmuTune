@@ -21,6 +21,10 @@ data class Game(
  * A distinct release of a game on one platform. A PC edition and a Wii edition of
  * the same title are different [GameEdition]s and are never assumed equivalent —
  * see [EditionRelationship].
+ *
+ * [platformIdentifier] is the edition's native serial/id on [platformId] (for Dolphin,
+ * its short game id such as `RMCE01`). It is what a launch-through needs to deep-link
+ * into the game; absent until a real, verified identifier is curated.
  */
 data class GameEdition(
     val id: GameEditionId,
@@ -28,6 +32,7 @@ data class GameEdition(
     val platformId: PlatformId,
     val name: String,
     val region: String? = null,
+    val platformIdentifier: String? = null,
 )
 
 /**
