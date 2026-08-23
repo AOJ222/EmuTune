@@ -80,6 +80,7 @@ androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifec
 
 # DataStore
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version = "1.1.0" }
 
 # Testing
 junit4 = { module = "junit:junit", version.ref = "junit4" }
