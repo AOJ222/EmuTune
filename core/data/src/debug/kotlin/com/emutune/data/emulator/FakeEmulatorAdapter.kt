@@ -137,7 +137,7 @@ class FakeEmulatorAdapter(
         return RestoreConfigResult.Restored(currentSnapshot())
     }
 
-    override suspend fun launch(route: ExecutionRoute): LaunchResult = LaunchResult.Launched
+    override suspend fun launch(game: GameIdentity, route: ExecutionRoute): LaunchResult = LaunchResult.Launched
 
     fun currentFields(): Map<ConfigKey, ConfigValue> = store.toMap()
 

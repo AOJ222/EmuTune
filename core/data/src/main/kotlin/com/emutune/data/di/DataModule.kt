@@ -8,6 +8,7 @@ import com.emutune.data.db.DeviceDao
 import com.emutune.data.db.EmuTuneDatabase
 import com.emutune.data.db.GameDao
 import com.emutune.data.db.ObservationDao
+import com.emutune.data.db.SessionDao
 import com.emutune.data.seed.DemoDataSeeder
 import com.emutune.model.recommendation.RecommendationEngine
 import dagger.BindsOptionalOf
@@ -35,6 +36,9 @@ object DataModule {
 
     @Provides
     fun provideDeviceDao(db: EmuTuneDatabase): DeviceDao = db.deviceDao()
+
+    @Provides
+    fun provideSessionDao(db: EmuTuneDatabase): SessionDao = db.sessionDao()
 
     @Provides
     @Singleton

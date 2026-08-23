@@ -14,6 +14,12 @@ interface GameDao {
     @Query("SELECT * FROM game_editions WHERE gameId = :gameId")
     fun editionsFor(gameId: Long): Flow<List<GameEditionEntity>>
 
+    @Query("SELECT * FROM game_editions WHERE id = :id")
+    fun editionById(id: Long): Flow<GameEditionEntity?>
+
+    @Query("SELECT * FROM games WHERE id = :id")
+    fun gameById(id: Long): Flow<GameEntity?>
+
     @Query("SELECT * FROM execution_routes WHERE gameEditionId = :editionId")
     fun routesFor(editionId: Long): Flow<List<ExecutionRouteEntity>>
 
@@ -52,4 +58,16 @@ interface DeviceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveInstallations(entities: List<EmulatorInstallationEntity>)
+}
+
+@Dao
+interface SessionDao {
+    @Query("SELECT * FROM play_session LIMIT 1")
+    fun observeCurrent(): Flow<PlaySessionEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: PlaySessionEntity)
+
+    @Query("DELETE FROM play_session")
+    suspend fun clear()
 }
