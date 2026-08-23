@@ -235,4 +235,40 @@ class ConfigTransactionManagerTest {
         assertTrue(last is ConfigTransactionStep.RolledBack)
         assertTrue((last as ConfigTransactionStep.RolledBack).rollbackVerified)
     }
+
+    @Test
+    fun `snapshot is persisted for interruption recovery`() = runTest {
+        val adapter = FakeEmulatorAdapter(
+            schema = schema,
+            initialConfig = mapOf(key to ConfigValue.IntegerValue(50)),
+        )
+        val store = RecordingStore()
+        val manager = ConfigTransactionManager(store)
+
+        manager.apply(adapter, candidate())
+
+        assertTrue(
+            store.saved.any { it.snapshot != null },
+            "The pre-mutation snapshot was never persisted, so recoverInterrupted cannot restore state",
+        )
+    }
+
+    /** Records every transaction that passes through save(), so persistence can be asserted. */
+    private class RecordingStore : ConfigTransactionStore {
+        val saved = mutableListOf<ConfigTransaction>()
+
+        override suspend fun save(transaction: ConfigTransaction) {
+            saved += transaction
+        }
+
+        override suspend fun load(id: ConfigTransactionId): ConfigTransaction? =
+            saved.lastOrNull { it.id == id }
+
+        override suspend fun delete(id: ConfigTransactionId) {
+            // Keep recorded saves; deletion is irrelevant to this test.
+        }
+
+        override suspend fun findInterrupted(): List<ConfigTransaction> =
+            saved.filter { it.state !in setOf(ConfigTransactionState.COMMITTED, ConfigTransactionState.FAILED) }
+    }
 }
