@@ -17,14 +17,16 @@ import com.emutune.model.route.EmulatorInstallation
 import com.emutune.model.route.ExecutionRoute
 
 /**
- * A minimal, game-scoped identity handed to adapters so per-game configuration can be
- * addressed without leaking the full game model into integration code.
+ * A minimal, game-scoped identity handed to adapters so per-game configuration and
+ * launch can be addressed without leaking the full game model into integration code.
+ * [platformIdentifier] is the game's native id on [platformId], required for launch.
  */
 data class GameIdentity(
     val gameId: GameId,
     val editionId: GameEditionId,
     val title: String,
     val platformId: PlatformId,
+    val platformIdentifier: String? = null,
 )
 
 /**
@@ -50,5 +52,5 @@ interface EmulatorAdapter {
 
     suspend fun restoreConfiguration(snapshot: ConfigSnapshot): RestoreConfigResult
 
-    suspend fun launch(route: ExecutionRoute): LaunchResult
+    suspend fun launch(game: GameIdentity, route: ExecutionRoute): LaunchResult
 }
