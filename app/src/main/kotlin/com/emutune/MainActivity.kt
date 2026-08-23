@@ -8,7 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.emutune.benchmark.FpsCaptureResult
 import com.emutune.benchmark.FpsCaptureService
+import com.emutune.model.benchmark.BenchmarkResult
 import com.emutune.ui.EmuTuneApp
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -24,6 +26,11 @@ class MainActivity : ComponentActivity() {
                 putExtra(FpsCaptureService.EXTRA_RESULT_DATA, result.data)
             }
             ContextCompat.startForegroundService(this, intent)
+        } else {
+            // Denied or cancelled — report it so the waiting ViewModel fails fast rather
+            // than timing out after the full capture window.
+            FpsCaptureResult.flow.value =
+                BenchmarkResult.Failure("Screen capture permission denied")
         }
     }
 
