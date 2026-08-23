@@ -2,12 +2,14 @@ package com.emutune.ui.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.emutune.benchmark.FpsCaptureResult
 import com.emutune.data.emulator.AdapterResolver
 import com.emutune.data.emulator.EmulatorRegistry
 import com.emutune.data.repo.GameRepository
 import com.emutune.data.repo.LaunchOutcome
 import com.emutune.data.repo.RecommendationRepository
 import com.emutune.data.repo.SessionRepository
+import com.emutune.model.benchmark.BenchmarkResult
 import com.emutune.model.game.Game
 import com.emutune.model.game.GameEdition
 import com.emutune.model.ids.GameId
@@ -19,8 +21,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class RouteRowUi(
     val route: ExecutionRoute,
@@ -40,6 +44,14 @@ sealed interface PlayUiState {
     data object MarkedManual : PlayUiState
 }
 
+/** State of the on-device FPS measurement via screen capture. */
+sealed interface FpsMeasureUiState {
+    data object Idle : FpsMeasureUiState
+    data object Measuring : FpsMeasureUiState
+    data class Success(val averageFps: Double) : FpsMeasureUiState
+    data class Failure(val reason: String) : FpsMeasureUiState
+}
+
 data class GameUiState(
     val game: Game? = null,
     val editions: List<GameEdition> = emptyList(),
@@ -47,6 +59,7 @@ data class GameUiState(
     val recommendation: Recommendation? = null,
     val loading: Boolean = true,
     val playState: PlayUiState = PlayUiState.Idle,
+    val fpsState: FpsMeasureUiState = FpsMeasureUiState.Idle,
 )
 
 @HiltViewModel
@@ -120,6 +133,30 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             sessionRepository.markManual(edition, route)
             _state.value = _state.value.copy(playState = PlayUiState.MarkedManual)
+        }
+    }
+
+    /**
+     * Measures the current game's frame rate from screen capture. [requestConsent] is
+     * the Activity-level callback that launches the MediaProjection consent dialog; the
+     * result is polled from the capture service once consent is granted.
+     */
+    fun startFpsMeasurement(requestConsent: () -> Unit) {
+        if (_state.value.fpsState == FpsMeasureUiState.Measuring) return
+        _state.value = _state.value.copy(fpsState = FpsMeasureUiState.Measuring)
+        FpsCaptureResult.flow.value = null
+        requestConsent()
+        viewModelScope.launch {
+            val result = withTimeoutOrNull(20_000) {
+                FpsCaptureResult.flow.filterNotNull().first()
+            }
+            _state.value = _state.value.copy(
+                fpsState = when (result) {
+                    null -> FpsMeasureUiState.Failure("Timed out waiting for a measurement")
+                    is BenchmarkResult.Success -> FpsMeasureUiState.Success(requireNotNull(result.metrics.averageFps))
+                    is BenchmarkResult.Failure -> FpsMeasureUiState.Failure(result.reason)
+                },
+            )
         }
     }
 }
