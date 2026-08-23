@@ -92,11 +92,14 @@ fun GameScreen(
                         .padding(Spacing.L),
                     verticalArrangement = Arrangement.spacedBy(Spacing.L),
                 ) {
+                    CurrentPerformanceCard(
+                        state = state,
+                        onMeasureFps = { viewModel.startFpsMeasurement(onMeasureFps) },
+                    )
                     BestVerifiedCard(
                         state = state,
                         onPlay = viewModel::play,
                         onMarkManual = viewModel::markPlayingManually,
-                        onMeasureFps = { viewModel.startFpsMeasurement(onMeasureFps) },
                     )
                     RoutesCard(state)
                 }
@@ -110,7 +113,6 @@ private fun BestVerifiedCard(
     state: GameUiState,
     onPlay: () -> Unit,
     onMarkManual: () -> Unit,
-    onMeasureFps: () -> Unit,
 ) {
     val recommendation = state.recommendation ?: return
     val recommendedRow = state.routes.firstOrNull { it.isRecommended } ?: return
@@ -169,14 +171,118 @@ private fun BestVerifiedCard(
         Spacer(modifier = Modifier.height(Spacing.L))
 
         PlayActions(state, onPlay = onPlay, onMarkManual = onMarkManual)
-        Spacer(modifier = Modifier.height(Spacing.M))
-        FpsMeasureSection(state = state, onMeasureFps = onMeasureFps)
         Spacer(modifier = Modifier.height(Spacing.S))
         Text(
             text = "Automatic optimisation is gated on the emulator's CONFIG_WRITE capability. Dolphin currently exposes guided configuration only.",
             style = MaterialTheme.typography.labelMedium,
             color = EmuTuneColors.TextTertiary,
         )
+    }
+}
+
+@Composable
+private fun CurrentPerformanceCard(
+    state: GameUiState,
+    onMeasureFps: () -> Unit,
+) {
+    val observation = state.latestObservation
+    val metrics = observation?.metrics
+
+    OpticSurface(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "CURRENT PERFORMANCE",
+            style = MaterialTheme.typography.labelLarge,
+            color = EmuTuneColors.TextSecondary,
+        )
+        Spacer(modifier = Modifier.height(Spacing.S))
+
+        if (observation != null && metrics != null && metrics.hasAnyMeasurement) {
+            val routeName = state.routes.firstOrNull {
+                it.route.id == observation.executionRouteId
+            }?.let { "${it.emulatorName} · ${it.platformName}" }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.XL)) {
+                Metric(
+                    label = "UPDATES/S",
+                    value = metrics.averageFps?.let { String.format("%.1f", it) } ?: "—",
+                    valueColor = EmuTuneColors.Accent,
+                )
+                Metric(
+                    label = "1% LOW",
+                    value = metrics.onePercentLowFps?.let { String.format("%.1f", it) } ?: "—",
+                )
+            }
+            Spacer(modifier = Modifier.height(Spacing.S))
+            Text(
+                text = "Measured on this device",
+                style = MaterialTheme.typography.labelMedium,
+                color = EmuTuneColors.TextSecondary,
+            )
+            Text(
+                text = "${StatusPresentation.evidenceGradeLabel(observation.evidenceGrade)} confidence",
+                style = MaterialTheme.typography.labelMedium,
+                color = EmuTuneColors.TextTertiary,
+            )
+            if (routeName != null) {
+                Spacer(modifier = Modifier.height(Spacing.XS))
+                Text(
+                    text = routeName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = EmuTuneColors.TextTertiary,
+                )
+            }
+        } else {
+            Text(
+                text = "Not measured on this device",
+                style = MaterialTheme.typography.bodyMedium,
+                color = EmuTuneColors.TextSecondary,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(Spacing.M))
+        MeasureAction(state = state, onMeasureFps = onMeasureFps)
+    }
+}
+
+@Composable
+private fun MeasureAction(state: GameUiState, onMeasureFps: () -> Unit) {
+    when (val fpsState = state.fpsState) {
+        FpsMeasureUiState.Idle -> {
+            OutlinedButton(onClick = onMeasureFps, modifier = Modifier.fillMaxWidth()) {
+                Text("MEASURE")
+            }
+        }
+
+        FpsMeasureUiState.Measuring -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(
+                    modifier = Modifier.height(16.dp),
+                    color = EmuTuneColors.Accent,
+                )
+                Spacer(modifier = Modifier.padding(horizontal = Spacing.S))
+                Text(
+                    text = "Measuring from screen capture…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = EmuTuneColors.TextSecondary,
+                )
+            }
+        }
+
+        is FpsMeasureUiState.Success -> {
+            Text(
+                text = "Measurement saved",
+                style = MaterialTheme.typography.labelLarge,
+                color = EmuTuneColors.Success,
+            )
+        }
+
+        is FpsMeasureUiState.Failure -> {
+            Text(
+                text = "Measurement failed: ${fpsState.reason}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = EmuTuneColors.Danger,
+            )
+        }
     }
 }
 
@@ -226,49 +332,6 @@ private fun PlayActions(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun FpsMeasureSection(state: GameUiState, onMeasureFps: () -> Unit) {
-    val fpsState = state.fpsState
-    when (fpsState) {
-        FpsMeasureUiState.Idle -> {
-            OutlinedButton(onClick = onMeasureFps, modifier = Modifier.fillMaxWidth()) {
-                Text("MEASURE FPS")
-            }
-        }
-
-        FpsMeasureUiState.Measuring -> {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(
-                    modifier = Modifier.height(16.dp).fillMaxWidth(0.08f),
-                    color = EmuTuneColors.Accent,
-                )
-                Spacer(modifier = Modifier.padding(horizontal = Spacing.S))
-                Text(
-                    text = "Measuring from screen capture…",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = EmuTuneColors.TextSecondary,
-                )
-            }
-        }
-
-        is FpsMeasureUiState.Success -> {
-            Metric(
-                label = "MEASURED FPS (screen)",
-                value = String.format("%.1f", fpsState.averageFps),
-                valueColor = EmuTuneColors.Accent,
-            )
-        }
-
-        is FpsMeasureUiState.Failure -> {
-            Text(
-                text = "Measurement failed: ${fpsState.reason}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = EmuTuneColors.Danger,
-            )
         }
     }
 }

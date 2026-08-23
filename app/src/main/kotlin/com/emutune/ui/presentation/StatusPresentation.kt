@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.Update
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.emutune.designsystem.theme.EmuTuneColors
+import com.emutune.model.evidence.EvidenceGrade
 import com.emutune.model.recommendation.ConfidenceLevel
 import com.emutune.model.recommendation.OptimizationStatus
 
@@ -79,5 +80,13 @@ object StatusPresentation {
         ConfidenceLevel.MEDIUM -> 0.5f
         ConfidenceLevel.HIGH -> 0.75f
         ConfidenceLevel.VERY_HIGH -> 1f
+    }
+
+    fun evidenceGradeLabel(grade: EvidenceGrade): String = when (grade) {
+        EvidenceGrade.A_DETERMINISTIC_BENCHMARK -> "Deterministic benchmark"
+        EvidenceGrade.B_MACHINE_GAMEPLAY -> "Machine-measured gameplay"
+        EvidenceGrade.C_PARTIAL_MEASUREMENT -> "Partial measurement"
+        EvidenceGrade.D_USER_SUBMITTED -> "User-submitted"
+        EvidenceGrade.E_EXTERNAL_RESEARCH -> "External research"
     }
 }
