@@ -161,16 +161,32 @@ class GameViewModel @Inject constructor(
     fun startFpsMeasurement(requestConsent: () -> Unit) {
         if (_state.value.fpsState == FpsMeasureUiState.Measuring) return
 
+        // Resolve the route BEFORE asking for screen-capture consent. A game with no
+        // emulator route has nothing to measure against, and making the user grant
+        // capture only to fail afterwards was a poor experience.
+        val routes = _state.value.routes
+        val route = routes.firstOrNull { it.isRecommended }?.route
+            ?: routes.firstOrNull()?.route
+        val editionId = route?.gameEditionId ?: _state.value.editions.firstOrNull()?.id
+        if (route == null) {
+            _state.value = _state.value.copy(
+                fpsState = FpsMeasureUiState.Failure(
+                    "This game has no emulator route yet — add one before measuring.",
+                ),
+            )
+            return
+        }
+
         _state.value = _state.value.copy(fpsState = FpsMeasureUiState.Measuring)
         FpsCaptureResult.flow.value = null
         requestConsent()
 
         viewModelScope.launch {
             val sessionRouteId = sessionRepository.observeCurrent().first()?.routeId
-            val route = sessionRouteId
-                ?.let { id -> _state.value.routes.firstOrNull { it.route.id == id }?.route }
-                ?: _state.value.routes.firstOrNull { it.isRecommended }?.route
-            val editionId = route?.gameEditionId ?: _state.value.editions.firstOrNull()?.id
+            val activeRoute = sessionRouteId
+                ?.let { id -> routes.firstOrNull { it.route.id == id }?.route }
+                ?: route
+            val activeEditionId = activeRoute.gameEditionId
 
             val result = withTimeoutOrNull(30_000) {
                 FpsCaptureResult.flow.filterNotNull().first()
@@ -179,7 +195,7 @@ class GameViewModel @Inject constructor(
                 null -> _state.value = _state.value.copy(fpsState = FpsMeasureUiState.Failure("Timed out waiting for a measurement"))
                 is BenchmarkResult.Failure -> _state.value = _state.value.copy(fpsState = FpsMeasureUiState.Failure(result.reason))
                 is BenchmarkResult.Success -> {
-                    persistAndRecompute(result.metrics, result.durationSeconds, result.grade, editionId, route)
+                    persistAndRecompute(result.metrics, result.durationSeconds, result.grade, activeEditionId, activeRoute)
                 }
             }
         }
