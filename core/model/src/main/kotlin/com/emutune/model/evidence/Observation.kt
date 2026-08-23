@@ -106,6 +106,8 @@ data class Observation(
     val success: Boolean = true,
     val crashCount: Int = 0,
     val recordedAt: Instant,
+    /** Which provider produced this observation (e.g. "screen-capture-frame-delta"). */
+    val providerId: String? = null,
 )
 
 /**
