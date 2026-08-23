@@ -19,7 +19,10 @@ import com.emutune.ui.navigation.MainDestination
  * [AddGameDestination] and [ActivityDestination] are pushed as detail screens.
  */
 @Composable
-fun EmuTuneApp(onMeasureFps: () -> Unit = {}) {
+fun EmuTuneApp(
+    onMeasureFps: () -> Unit = {},
+    onGrantDolphinAccess: () -> Unit = {},
+) {
     EmuTuneTheme {
         val backStack = rememberNavBackStack(MainDestination)
         fun pop() {
@@ -38,6 +41,7 @@ fun EmuTuneApp(onMeasureFps: () -> Unit = {}) {
                     MainScreen(
                         onOpenGame = { gameId -> backStack.add(GameDestination(gameId)) },
                         onAddGame = { backStack.add(AddGameDestination) },
+                        onGrantDolphinAccess = onGrantDolphinAccess,
                     )
                 }
                 entry<GameDestination> { key ->

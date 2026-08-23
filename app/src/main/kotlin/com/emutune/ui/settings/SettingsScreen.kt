@@ -15,13 +15,14 @@ import com.emutune.designsystem.component.OpticSurface
 import com.emutune.designsystem.theme.EmuTuneColors
 import com.emutune.designsystem.theme.Spacing
 import com.emutune.ui.debug.OptimizationDemoSection
+import com.emutune.ui.debug.SafGrantSection
 
 /**
  * App preferences only. Emulator configuration belongs to the game/route context, not a
  * global settings dump, so this screen deliberately stays minimal.
  */
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onGrantDolphinAccess: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,6 +51,7 @@ fun SettingsScreen() {
             }
         }
 
+        SafGrantSection(onGrant = onGrantDolphinAccess)
         OptimizationDemoSection()
     }
 }

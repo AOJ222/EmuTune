@@ -61,6 +61,7 @@ enum class TopDestination(val label: String, val icon: ImageVector) {
 fun MainScreen(
     onOpenGame: (Long) -> Unit,
     onAddGame: () -> Unit,
+    onGrantDolphinAccess: () -> Unit = {},
     viewModel: MainViewModel = hiltViewModel(),
 ) {
     var selected by remember { mutableStateOf(TopDestination.HOME) }
@@ -75,7 +76,7 @@ fun MainScreen(
                 TopDestination.LIBRARY -> LibraryScreen(onOpenGame = onOpenGame, onAddGame = onAddGame)
                 TopDestination.DEVICE -> DeviceScreen()
                 TopDestination.ACTIVITY -> ActivityScreen(onBack = null)
-                TopDestination.SETTINGS -> SettingsScreen()
+                TopDestination.SETTINGS -> SettingsScreen(onGrantDolphinAccess = onGrantDolphinAccess)
             }
         }
     }
