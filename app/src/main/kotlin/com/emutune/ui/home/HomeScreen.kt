@@ -21,15 +21,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.emutune.designsystem.component.Metric
 import com.emutune.designsystem.component.OpticSurface
+import com.emutune.designsystem.component.SectionTitle
 import com.emutune.designsystem.theme.EmuTuneColors
 import com.emutune.designsystem.theme.Spacing
 import com.emutune.model.device.DeviceFingerprint
 
 @Composable
-fun HomeScreen(
-    onOpenGame: (Long) -> Unit,
-    viewModel: HomeViewModel = hiltViewModel(),
-) {
+fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val installations by viewModel.installations.collectAsStateWithLifecycle()
 
@@ -77,15 +75,6 @@ fun HomeScreen(
             }
         }
     }
-}
-
-@Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = EmuTuneColors.TextSecondary,
-    )
 }
 
 @Composable
