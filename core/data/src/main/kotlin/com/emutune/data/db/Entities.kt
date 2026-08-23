@@ -24,6 +24,7 @@ data class GameEditionEntity(
     val platformId: String,
     val name: String,
     val region: String?,
+    val platformIdentifier: String?,
 )
 
 @Entity(tableName = "execution_routes")
@@ -66,4 +67,14 @@ data class EmulatorInstallationEntity(
     val versionName: String?,
     val versionCode: Long?,
     val detectedAt: Long,
+)
+
+/** The single current play session (one row, keyed at 1 like [DeviceProfileEntity]). */
+@Entity(tableName = "play_session")
+data class PlaySessionEntity(
+    @PrimaryKey val id: Long = 1,
+    val gameEditionId: Long,
+    val routeId: Long?,
+    val source: String,
+    val startedAt: Long,
 )

@@ -11,6 +11,7 @@ import androidx.room.RoomDatabase
         ObservationEntity::class,
         DeviceProfileEntity::class,
         EmulatorInstallationEntity::class,
+        PlaySessionEntity::class,
     ],
     version = 1,
     exportSchema = false,
@@ -19,4 +20,5 @@ abstract class EmuTuneDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun observationDao(): ObservationDao
     abstract fun deviceDao(): DeviceDao
+    abstract fun sessionDao(): SessionDao
 }

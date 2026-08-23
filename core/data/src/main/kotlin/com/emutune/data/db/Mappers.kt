@@ -21,6 +21,8 @@ import com.emutune.model.ids.PlatformId
 import com.emutune.model.ids.TranslationLayerId
 import com.emutune.model.route.EmulatorInstallation
 import com.emutune.model.route.ExecutionRoute
+import com.emutune.model.session.PlaySession
+import com.emutune.model.session.PlaySessionSource
 import java.time.Instant
 
 /**
@@ -50,6 +52,7 @@ object Mappers {
         platformId = PlatformId(platformId),
         name = name,
         region = region,
+        platformIdentifier = platformIdentifier,
     )
 
     fun GameEdition.toEntity() = GameEditionEntity(
@@ -58,6 +61,7 @@ object Mappers {
         platformId = platformId.value,
         name = name,
         region = region,
+        platformIdentifier = platformIdentifier,
     )
 
     fun ExecutionRouteEntity.toDomain() = ExecutionRoute(
@@ -131,5 +135,20 @@ object Mappers {
         versionName = versionName,
         versionCode = versionCode,
         detectedAt = detectedAt.toEpochMilli(),
+    )
+
+    fun PlaySessionEntity.toDomain() = PlaySession(
+        gameEditionId = GameEditionId(gameEditionId),
+        routeId = routeId?.let { ExecutionRouteId(it) },
+        source = PlaySessionSource.valueOf(source),
+        startedAt = Instant.ofEpochMilli(startedAt),
+    )
+
+    fun PlaySession.toEntity() = PlaySessionEntity(
+        id = 1,
+        gameEditionId = gameEditionId.value,
+        routeId = routeId?.value,
+        source = source.name,
+        startedAt = startedAt.toEpochMilli(),
     )
 }

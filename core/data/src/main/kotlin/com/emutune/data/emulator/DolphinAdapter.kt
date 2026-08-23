@@ -1,5 +1,8 @@
 package com.emutune.data.emulator
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import com.emutune.model.config.ApplyConfigResult
 import com.emutune.model.config.CandidateConfig
 import com.emutune.model.config.ConfigReadResult
@@ -15,6 +18,7 @@ import com.emutune.model.route.EmulatorCapability
 import com.emutune.model.route.EmulatorIdentity
 import com.emutune.model.route.EmulatorInstallation
 import com.emutune.model.route.ExecutionRoute
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,9 +27,18 @@ import javax.inject.Singleton
  * every uncertain surface fails closed as NotSupported. Because a third-party Android
  * app cannot read or write Dolphin's app-private configuration without root, this
  * adapter exposes guided configuration rather than automatic mutation.
+ *
+ * Launch uses Dolphin's confirmed `dolphinemu://app/play/<channel>/<gameId>` deep link.
+ * The scheme is CONFIRMED from upstream source; the channel token is derived from the
+ * route platform id and the game id from [GameIdentity.platformIdentifier], both of
+ * which are LIKELY-formatted — a launch that does not resolve fails closed to
+ * [LaunchResult.Failed], which the UI surfaces as "mark as playing" rather than
+ * pretending it succeeded.
  */
 @Singleton
-class DolphinAdapter @Inject constructor() : EmulatorAdapter {
+class DolphinAdapter @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+) : EmulatorAdapter {
 
     override val identity = EmulatorIdentity(
         id = EmulatorId("dolphin"),
@@ -57,8 +70,19 @@ class DolphinAdapter @Inject constructor() : EmulatorAdapter {
     override suspend fun restoreConfiguration(snapshot: ConfigSnapshot): RestoreConfigResult =
         RestoreConfigResult.Failed("No configuration was written to restore")
 
-    override suspend fun launch(route: ExecutionRoute): LaunchResult =
-        // GAME_LAUNCH is confirmed via the `dolphinemu://app/play/<channelId>/<gameId>`
-        // deep link, but the route does not yet carry Dolphin's per-game library id.
-        LaunchResult.NotSupported("Requires the game's Dolphin library id, not yet modelled on the route")
+    override suspend fun launch(game: GameIdentity, route: ExecutionRoute): LaunchResult {
+        val gameId = game.platformIdentifier
+        if (gameId.isNullOrBlank()) {
+            return LaunchResult.NotSupported("This game has no Dolphin identifier to launch by")
+        }
+        val uri = Uri.parse("dolphinemu://app/play/${route.platformId.value}/$gameId")
+        return runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            LaunchResult.Launched
+        }.getOrElse { error ->
+            LaunchResult.Failed("Could not launch Dolphin: ${error.message}")
+        }
+    }
 }
