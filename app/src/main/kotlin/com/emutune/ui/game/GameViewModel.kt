@@ -23,6 +23,7 @@ import com.emutune.model.recommendation.DisqualificationReason
 import com.emutune.model.recommendation.OptimizationGoal
 import com.emutune.model.recommendation.Recommendation
 import com.emutune.model.route.ExecutionRoute
+import com.emutune.model.ids.ExecutionRouteId
 import com.emutune.ui.presentation.StatusPresentation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -59,6 +60,15 @@ sealed interface FpsMeasureUiState {
     data class Failure(val reason: String) : FpsMeasureUiState
 }
 
+/** The honest outcome of the Optimise action, derived from the recommendation. */
+sealed interface OptimiseUiState {
+    data object Idle : OptimiseUiState
+    data class BetterRoute(val fromName: String, val toName: String, val percentChange: Double?) : OptimiseUiState
+    data class OnBestRoute(val name: String) : OptimiseUiState
+    data class NeedsSession(val detail: String) : OptimiseUiState
+    data class InsufficientEvidence(val detail: String) : OptimiseUiState
+}
+
 data class GameUiState(
     val game: Game? = null,
     val editions: List<GameEdition> = emptyList(),
@@ -69,6 +79,7 @@ data class GameUiState(
     val fpsState: FpsMeasureUiState = FpsMeasureUiState.Idle,
     /** The most recent persisted observation for the primary edition, if any. */
     val latestObservation: Observation? = null,
+    val optimiseState: OptimiseUiState = OptimiseUiState.Idle,
 )
 
 @HiltViewModel
@@ -95,8 +106,9 @@ class GameViewModel @Inject constructor(
                 .filter { route -> editions.any { it.id == route.gameEditionId } }
             val primaryEdition = editions.firstOrNull()
 
+            val currentRouteId = sessionRepository.observeCurrent().first()?.routeId
             val recommendation = primaryEdition?.let {
-                recommendationRepository.recommendFor(it.id, OptimizationGoal.BALANCED)
+                recommendationRepository.recommendFor(it.id, OptimizationGoal.BALANCED, currentRouteId)
             }
             val latestObservation = primaryEdition?.let {
                 observationRepository.observeForEdition(it.id).first().firstOrNull()
@@ -193,7 +205,11 @@ class GameViewModel @Inject constructor(
             gameId = _state.value.game?.id?.value,
         )
 
-        val recommendation = recommendationRepository.recommendFor(editionId, OptimizationGoal.BALANCED)
+        val recommendation = recommendationRepository.recommendFor(
+            editionId,
+            OptimizationGoal.BALANCED,
+            sessionRepository.observeCurrent().first()?.routeId,
+        )
         val after = recommendation.status
         if (before != null && after != before) {
             activityRepository.record(
@@ -245,5 +261,37 @@ class GameViewModel @Inject constructor(
             loading = loading,
             latestObservation = latestObservation,
         )
+    }
+
+    /**
+     * Derives the honest outcome of the Optimise action from the current recommendation.
+     * Automatic per-setting configuration is not attempted here — no real emulator
+     * exposes CONFIG_WRITE — so this is route-level guidance, not config mutation.
+     */
+    fun optimise() {
+        val recommendation = _state.value.recommendation
+        val routes = _state.value.routes
+        val comparison = recommendation?.comparison
+        val recommendedName = routes.firstOrNull { it.isRecommended }
+            ?.let { "${it.emulatorName} · ${it.platformName}" }
+        val currentName = comparison?.currentRouteId
+            ?.let { id -> routes.firstOrNull { it.route.id == id } }
+            ?.let { "${it.emulatorName} · ${it.platformName}" }
+
+        val state = when {
+            recommendation == null ->
+                OptimiseUiState.InsufficientEvidence("No recommendation available yet.")
+            comparison == null || currentName == null ->
+                OptimiseUiState.NeedsSession("Mark this game as playing to compare your current route.")
+            recommendedName == null ->
+                OptimiseUiState.InsufficientEvidence("No recommended route.")
+            comparison.recommendedRouteId == comparison.currentRouteId ->
+                OptimiseUiState.OnBestRoute(recommendedName)
+            (comparison.percentChange ?: 0.0) > 0 ->
+                OptimiseUiState.BetterRoute(currentName, recommendedName, comparison.percentChange)
+            else ->
+                OptimiseUiState.OnBestRoute(recommendedName)
+        }
+        _state.value = _state.value.copy(optimiseState = state)
     }
 }

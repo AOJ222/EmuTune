@@ -100,6 +100,7 @@ fun GameScreen(
                         state = state,
                         onPlay = viewModel::play,
                         onMarkManual = viewModel::markPlayingManually,
+                        onOptimise = viewModel::optimise,
                     )
                     RoutesCard(state)
                 }
@@ -113,6 +114,7 @@ private fun BestVerifiedCard(
     state: GameUiState,
     onPlay: () -> Unit,
     onMarkManual: () -> Unit,
+    onOptimise: () -> Unit,
 ) {
     val recommendation = state.recommendation ?: return
     val recommendedRow = state.routes.firstOrNull { it.isRecommended } ?: return
@@ -171,12 +173,81 @@ private fun BestVerifiedCard(
         Spacer(modifier = Modifier.height(Spacing.L))
 
         PlayActions(state, onPlay = onPlay, onMarkManual = onMarkManual)
+        Spacer(modifier = Modifier.height(Spacing.M))
+        OptimiseSection(state = state, onOptimise = onOptimise)
         Spacer(modifier = Modifier.height(Spacing.S))
-        Text(
-            text = "Automatic optimisation is gated on the emulator's CONFIG_WRITE capability. Dolphin currently exposes guided configuration only.",
-            style = MaterialTheme.typography.labelMedium,
-            color = EmuTuneColors.TextTertiary,
-        )
+    }
+}
+
+@Composable
+private fun OptimiseSection(state: GameUiState, onOptimise: () -> Unit) {
+    val optimiseState = state.optimiseState
+
+    if (optimiseState == OptimiseUiState.Idle) {
+        Button(onClick = onOptimise, modifier = Modifier.fillMaxWidth()) {
+            Text("OPTIMISE")
+        }
+        return
+    }
+
+    OpticSurface(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.M)) {
+            Text(
+                text = "OPTIMISE",
+                style = MaterialTheme.typography.labelLarge,
+                color = EmuTuneColors.TextSecondary,
+            )
+            when (optimiseState) {
+                is OptimiseUiState.BetterRoute -> {
+                    Text(
+                        text = "Switch to ${optimiseState.toName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = EmuTuneColors.TextPrimary,
+                    )
+                    optimiseState.percentChange?.let {
+                        Text(
+                            text = "≈ %+d%% vs ${optimiseState.fromName}".format(it.toInt()),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = EmuTuneColors.Success,
+                        )
+                    }
+                    Text(
+                        text = "Automatic configuration is not available for this emulator — this is a route change you make in the emulator.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = EmuTuneColors.TextSecondary,
+                    )
+                }
+
+                is OptimiseUiState.OnBestRoute -> {
+                    Text(
+                        text = "${optimiseState.name} is already your best verified route.",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = EmuTuneColors.TextPrimary,
+                    )
+                    Text(
+                        text = "No meaningful retuning recommended.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = EmuTuneColors.TextSecondary,
+                    )
+                }
+
+                is OptimiseUiState.NeedsSession -> {
+                    Text(
+                        text = optimiseState.detail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = EmuTuneColors.TextSecondary,
+                    )
+                }
+
+                is OptimiseUiState.InsufficientEvidence -> {
+                    Text(
+                        text = optimiseState.detail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = EmuTuneColors.TextSecondary,
+                    )
+                }
+            }
+        }
     }
 }
 
